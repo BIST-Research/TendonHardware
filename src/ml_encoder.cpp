@@ -1,12 +1,36 @@
 /*
  * Authors: Ben Westcott, Jayson D
  * Date created: 7/31/23
+ * 
+ * Modified 8/2/23 - encoder_extint_init to use register access modifiers
  */
 
 #include <ml_encoder.hpp>
 
 void encoder_extint_init(void)
 {
+    // EIC->EVCTRL.bit.EXTINTEO =
+    // (
+    //     //EIC_EVCTRL_EXTINTEO(0) |
+    //     //EIC_EVCTRL_EXTINTEO(1) |
+    //     //EIC_EVCTRL_EXTINTEO(2) |
+    //     //EIC_EVCTRL_EXTINTEO(3) |
+    //     //EIC_EVCTRL_EXTINTEO(4) |
+    //     //EIC_EVCTRL_EXTINTEO(5) |
+    //     //EIC_EVCTRL_EXTINTEO(6) |
+    //     //EIC_EVCTRL_EXTINTEO(7) |
+    //     //EIC_EVCTRL_EXTINTEO(8) |
+    //     //EIC_EVCTRL_EXTINTEO(9) |
+    //     //EIC_EVCTRL_EXTINTEO(10) |
+    //     //EIC_EVCTRL_EXTINTEO(11) |
+    //     EIC_EVCTRL_EXTINTEO(12) |
+    //     EIC_EVCTRL_EXTINTEO(13)
+    //     //EIC_EVCTRL_EXTINTEO(14) |
+    //     //EIC_EVCTRL_EXTINTEO(15) |
+    // );
+
+    EIC->EVCTRL.bit.EXTINTEO = 0;
+    
     EIC->CONFIG[0].reg = 
     (
         EIC_CONFIG_FILTEN0 |
@@ -66,20 +90,22 @@ void encoder_extint_init(void)
         //EIC_INTENSET_EXTINT(6) | 
         //EIC_INTENSET_EXTINT(7) | 
         //EIC_INTENSET_EXINT(8) | 
-        //EIC_INTENSET_EXTINT(9) | 
         //EIC_INTENSET_EXTINT(10) | 
         //EIC_INTENSET_EXTINT(11) | 
-        EIC_INTENSET_EXTINT(12) | 
-        EIC_INTENSET_EXTINT(13)  
+        (1 << EIC_INTENSET_EXTINT(12)) | 
+        (1 << EIC_INTENSET_EXTINT(13))  
         //EIC_INTENSET_EXTINT(14) | 
         //EIC_INTENSET_EXTINT(15)
     );
+
+    NVIC_EnableIRQ(EIC_12_IRQn);
+    NVIC_EnableIRQ(EIC_13_IRQn);
 }
 
 void encoder_tick(ml_motor *set)
 {
-    uint8_t a_phase = (uint8_t)logical_read(&set->encoder_a);
-    uint8_t b_phase = (uint8_t)logical_read(&set->encoder_b);
+    uint8_t a_phase = (uint8_t)(!logical_read(&set->encoder_a));
+    uint8_t b_phase = (uint8_t)(!logical_read(&set->encoder_b));
 
     uint8_t current_encoded = (a_phase << 1) | b_phase;
     uint8_t sum = (set->last_encoded << 2) | current_encoded;

@@ -2,6 +2,8 @@
  * Author: Ben Westcott
  * Date created: 7/31/23
  */
+#ifndef ML_ENCODER_H
+#define ML_ENCODER_H
 
 #include <Arduino.h>
 #include <ml_motor.hpp>
@@ -48,3 +50,5 @@
 
 void encoder_extint_init(void);
 void encoder_tick(ml_motor *set);
+
+#endif

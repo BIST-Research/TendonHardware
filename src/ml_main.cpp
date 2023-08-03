@@ -7,6 +7,7 @@
 #include <header/ml_tcc.hpp>
 #include <header/ml_ac.hpp>
 */
+
 #include <ml_clocks.h>
 #include <ml_motor.hpp>
 #include <ml_tcc.h>
@@ -14,20 +15,22 @@
 #include <ml_encoder.hpp>
 
 #define N_MOTORS (12)
-#define MOTOR_MAX_PERIOD (6000)
-#define MOTOR_MAX_SPEED (MOTOR_MAX_PERIOD - 10)
+
+#define NUM_POSITIONS   3
 
 ml_motor stack_pin_map[N_MOTORS] = 
 {
     {
         // D40 --> PC13 --> EXTINT[13]
-        {PORT_GRP_C, 13, PF_A, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
+        {PORT_GRP_C, 13, PF_A, PP_ODD, INPUT_PULL_UP, DRIVE_OFF},
         // D41 --> PC12 --> EXTINT[12]
-        {PORT_GRP_C, 12, PF_A, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
+        {PORT_GRP_C, 12, PF_A, PP_EVEN, INPUT_PULL_UP, DRIVE_OFF},
         // D21 --> PB21
         {PORT_GRP_B, 21, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
         // D25 --> PC16
         {PORT_GRP_C, 16, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+
+        {2000, 0, 0, 0, 0, 0},
 
         TCC0, 0, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     },
@@ -42,6 +45,8 @@ ml_motor stack_pin_map[N_MOTORS] =
         // D24 --> PC17
         {PORT_GRP_C, 17, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
 
+        {0, 0, 0, 0, 0, 0},
+
         TCC0, 1, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     },
 
@@ -54,6 +59,8 @@ ml_motor stack_pin_map[N_MOTORS] =
         {PORT_GRP_B, 13, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
         // D2 --> PC18
         {PORT_GRP_C, 18, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+
+        {0, 0, 0, 0, 0, 0},
 
         TCC0, 2, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     },
@@ -68,6 +75,8 @@ ml_motor stack_pin_map[N_MOTORS] =
         // D3 --> PC19
         {PORT_GRP_C, 19, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
 
+        {0, 0, 0, 0, 0, 0},
+
         TCC0, 3, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     },
 
@@ -81,6 +90,8 @@ ml_motor stack_pin_map[N_MOTORS] =
         // D4 --> PC20
         {PORT_GRP_C, 20, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
 
+        {0, 0, 0, 0, 0, 0},
+
         TCC0, 4, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     },
 
@@ -93,6 +104,8 @@ ml_motor stack_pin_map[N_MOTORS] =
         {PORT_GRP_C, 22, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
         // D5 --> PC21
         {PORT_GRP_C, 21, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+
+        {0, 0, 0, 0, 0, 0},
 
         TCC0, 5, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     },
@@ -109,6 +122,8 @@ ml_motor stack_pin_map[N_MOTORS] =
         // D37 --> PA16
         {PORT_GRP_A, 16, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
 
+        {0, 0, 0, 0, 0, 0},
+
         TCC1, 0, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     },
 
@@ -122,6 +137,8 @@ ml_motor stack_pin_map[N_MOTORS] =
         // D36 --> PA17
         {PORT_GRP_A, 17, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
 
+        {0, 0, 0, 0, 0, 0},
+
         TCC1, 1, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     },
 
@@ -134,6 +151,8 @@ ml_motor stack_pin_map[N_MOTORS] =
         {PORT_GRP_B, 25, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
         // D35 --> PA18
         {PORT_GRP_A, 18, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+
+        {0, 0, 0, 0, 0, 0},
 
         TCC1, 2, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     },
@@ -149,6 +168,8 @@ ml_motor stack_pin_map[N_MOTORS] =
         // D34 --> PA19
         {PORT_GRP_A, 19, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
 
+        {0, 0, 0, 0, 0, 0},
+
         TCC1, 3, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     },
 
@@ -161,6 +182,8 @@ ml_motor stack_pin_map[N_MOTORS] =
         {PORT_GRP_D, 20, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
         // D33 --> PA20
         {PORT_GRP_A, 20, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+
+        {0, 0, 0, 0, 0, 0},
 
         TCC1, 4, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     },
@@ -175,9 +198,13 @@ ml_motor stack_pin_map[N_MOTORS] =
         // D32 --> PA21
         {PORT_GRP_A, 21, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
 
+        {0, 0, 0, 0, 0, 0},
+
         TCC1, 5, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
     }
 };
+
+uint32_t positions[NUM_POSITIONS] = {0, 180, 0};
 
 
 void dstack_a_init(void)
@@ -275,9 +302,9 @@ void setup(void)
     TCC_ENABLE(TCC1);
     TCC_sync(TCC1);
 
-    //eic_init();
-    //encoder_extint_init();
-    //eic_enable();
+    eic_init();
+    encoder_extint_init();
+    eic_enable();
 
     for(uint8_t i=0; i < N_MOTORS; i++)
     {
@@ -294,12 +321,12 @@ void setup(void)
             motor_set_speed(&stack_pin_map[i], 5500);
         }
 
-        logical_set(&stack_pin_map[i].phase);
-        //motor_set_direction(&stack_pin_map[i], OFF);
+        // logical_set(&stack_pin_map[i].phase);
+        motor_set_direction(&stack_pin_map[i], OFF);
     }
 
-    motor_set_direction(&stack_pin_map[0], CW);
-    //motor_set_speed(&stack_pin_map[0], 5500);
+    // motor_set_direction(&stack_pin_map[0], CCW);
+    // motor_set_speed(&stack_pin_map[0], 5500);
 
 
     //logical_set(&stack_pin_map[0].phase);
@@ -318,6 +345,8 @@ static boolean extint_13_intflag = false;
 
 void loop(void)
 {
+    static byte position_idx = 0;
+
     if(extint_12_intflag)
     {
         encoder_tick(&stack_pin_map[0]);
@@ -330,6 +359,15 @@ void loop(void)
         extint_13_intflag = false;
     }
 
+    motor_pid_control_loop(&stack_pin_map[0], positions[position_idx]);
+
+    bool isSteady = pid_steady_state(&stack_pin_map[0].pid_ctrl);
+    
+    if (isSteady)
+    {
+        position_idx = (position_idx + 1) % NUM_POSITIONS;
+    }
+    // Serial.println(stack_pin_map[0].ticks);
 }
 
 void EIC_12_Handler(void)

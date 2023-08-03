@@ -2,6 +2,7 @@
  * Author: Ben Westcott
  * Date created: 7/31/23
  */
+
 #include <ml_eic.h>
 #include <ml_clocks.h>
 
@@ -19,4 +20,10 @@ void eic_init(void)
     // I believe this is default, i.e., this register is 
     // initialized to a value of 0x0
     // EIC->ASYNCH.reg &= ~EIC_ASYNCH_ASYNCH(0);
+}
+
+void eic_enable(void)
+{
+    EIC->CTRLA.bit.ENABLE = 1;
+    while(EIC->SYNCBUSY.bit.ENABLE);
 }
