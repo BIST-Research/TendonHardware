@@ -49,6 +49,6 @@
  */
 
 void encoder_extint_init(void);
-void encoder_tick(ml_motor *set);
+// void encoder_tick(ml_motor *set);
 
 #endif

@@ -1,218 +1,89 @@
-/*
-#include <header/sine_tables.hpp>
-#include <header/ml_port.hpp>
-#include <header/ml_clocks.hpp>
-#include <header/ml_adc.hpp>
-#include <header/ml_dmac.hpp>
-#include <header/ml_tcc.hpp>
-#include <header/ml_ac.hpp>
-*/
+#include <FreeRTOS_SAMD51.h>
 
 #include <ml_clocks.h>
-#include <ml_motor.hpp>
 #include <ml_tcc.h>
+#include <ml_tc.h>
 #include <ml_eic.h>
-#include <ml_encoder.hpp>
 
-#define N_MOTORS (12)
+#include <ml_encoder_module.h>
+#include <ml_motor_module.h>
+#include <ml_active_object.h>
 
-#define NUM_POSITIONS   3
+#define NUM_MOTORS  6
 
-ml_motor stack_pin_map[N_MOTORS] = 
-{
-    {
-        // D40 --> PC13 --> EXTINT[13]
-        {PORT_GRP_C, 13, PF_A, PP_ODD, INPUT_PULL_UP, DRIVE_OFF},
-        // D41 --> PC12 --> EXTINT[12]
+static bool timer_expired = false;
+
+ML_Encoder_t enc[NUM_MOTORS] = {
+    ML_Encoder(
+        {PORT_GRP_C, 15, PF_A, PP_ODD, INPUT_PULL_UP, DRIVE_OFF},
+        {PORT_GRP_C, 14, PF_A, PP_EVEN, INPUT_PULL_UP, DRIVE_OFF}
+        ),
+    ML_Encoder(
         {PORT_GRP_C, 12, PF_A, PP_EVEN, INPUT_PULL_UP, DRIVE_OFF},
-        // D21 --> PB21
-        {PORT_GRP_B, 21, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D25 --> PC16
-        {PORT_GRP_C, 16, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {2000, 0, 0, 0, 0, 0},
-
-        TCC0, 0, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    },
-
-    {
-        // D42 --> PC15 --> EXTINT[15]
-        {PORT_GRP_C, 15, PF_A, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D43 --> PC14 --> EXTINT[14]
-        {PORT_GRP_C, 14, PF_A, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D20 --> PB20
-        {PORT_GRP_B, 20, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D24 --> PC17
-        {PORT_GRP_C, 17, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {0, 0, 0, 0, 0, 0},
-
-        TCC0, 1, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    },
-
-    {
-        // D44 --> PC11 --> EXTINT[11]
-        {PORT_GRP_C, 11, PF_A, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D45 --> PC10 --> EXTINT[10]
+        {PORT_GRP_C, 13, PF_A, PP_ODD, INPUT_PULL_UP, DRIVE_OFF}
+        ),
+    ML_Encoder(
         {PORT_GRP_C, 10, PF_A, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D19 --> PB13
-        {PORT_GRP_B, 13, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D2 --> PC18
-        {PORT_GRP_C, 18, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {0, 0, 0, 0, 0, 0},
-
-        TCC0, 2, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    },
-
-    {
-        // D46 --> PC06 --> EXTINT[6]
-        {PORT_GRP_C, 6, PF_A, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D47 --> PC07 --> EXTINT[9]
-        {PORT_GRP_C, 7, PF_A, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D18 --> PB12
-        {PORT_GRP_B, 12, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D3 --> PC19
-        {PORT_GRP_C, 19, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {0, 0, 0, 0, 0, 0},
-
-        TCC0, 3, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    },
-
-    {
-        // D48 --> PC04 --> EXTINT[4]
-        {PORT_GRP_C, 4, PF_A, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D49 --> PC05 --> EXTINT[5]
-        {PORT_GRP_C, 5, PF_A, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF}, 
-        // D17 --> PC23
-        {PORT_GRP_C, 23, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D4 --> PC20
-        {PORT_GRP_C, 20, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {0, 0, 0, 0, 0, 0},
-
-        TCC0, 4, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    },
-
-    {
-        // D30 --> PA23 --> EXTINT[7]
-        {PORT_GRP_A, 23, PF_A, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D51 --> PD08 --> EXTINT[3]
-        {PORT_GRP_D, 8, PF_A, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D16 --> PC22
-        {PORT_GRP_C, 22, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D5 --> PC21
-        {PORT_GRP_C, 21, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {0, 0, 0, 0, 0, 0},
-
-        TCC0, 5, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    },
-
-    /*****************************************/
-
-    {
-        // D52 --> PD09 --> EXTINT[4] (Conflict with PC04)
-        {PORT_GRP_D, 9, PF_B, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D53 --> PD10 --> EXTINT[5] (Conflict with PC05)
-        {PORT_GRP_D, 10, PF_B, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D15 --> PB17
-        {PORT_GRP_B, 17, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D37 --> PA16
-        {PORT_GRP_A, 16, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {0, 0, 0, 0, 0, 0},
-
-        TCC1, 0, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    },
-
-    {
-        // D38 --> PB15 --> EXTINT[15] (Conflict with PC15)
-        {PORT_GRP_B, 15, PF_B, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D39 --> PB14 --> EXTINT[14] (Conflict with PC14)
-        {PORT_GRP_B, 14, PF_B, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D14 --> PB16
-        {PORT_GRP_B, 16, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D36 --> PA17
-        {PORT_GRP_A, 17, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {0, 0, 0, 0, 0, 0},
-
-        TCC1, 1, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    },
-
-    {
-        // D8 --> PB18 --> EXTINT[2]
-        {PORT_GRP_D, 18, PF_B, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D31 --> PA22 --> EXTINT[6]
-        {PORT_GRP_A, 22, PF_B, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D0 --> PB25
-        {PORT_GRP_B, 25, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D35 --> PA18
-        {PORT_GRP_A, 18, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {0, 0, 0, 0, 0, 0},
-
-        TCC1, 2, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    },
-
-    {
-
-        // D12 --> PB00 --> EXTINT[0]
-        {PORT_GRP_A, 0, PF_B, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D29 --> PB19 --> EXTINT[3] (Conflict w/ PD08)
-        {PORT_GRP_B, 19, PF_B, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D1 --> PB24
-        {PORT_GRP_B, 24, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D34 --> PA19
-        {PORT_GRP_A, 19, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {0, 0, 0, 0, 0, 0},
-
-        TCC1, 3, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    },
-
-    {
-        // D26 --> PA12 --> EXTINT[12] (Conflict w/ C12)
-        {PORT_GRP_A, 12, PF_B, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D27 --> PA13 --> EXTINT[13] (Conflict w/ C13)
-        {PORT_GRP_A, 13, PF_B, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D6 --> PD20
-        {PORT_GRP_D, 20, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D33 --> PA20
-        {PORT_GRP_A, 20, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {0, 0, 0, 0, 0, 0},
-
-        TCC1, 4, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    },
-
-    {
-        // D22 --> PD12 --> EXTINT[7] (Conflict w/ A23)
-        {PORT_GRP_D, 12, PF_B, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D13 --> PB01 --> EXTINT[1]
-        {PORT_GRP_A, 1, PF_B, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
-        // D7 --> PD21
-        {PORT_GRP_D, 21, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        // D32 --> PA21
-        {PORT_GRP_A, 21, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-
-        {0, 0, 0, 0, 0, 0},
-
-        TCC1, 5, ML_HPCB_LV_75P1, ML_ENC_CPR, 0, 0
-    }
+        {PORT_GRP_C, 11, PF_A, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF}
+    ) 
 };
 
-uint32_t positions[NUM_POSITIONS] = {0, 180, 0};
+ML_Motor_t m[NUM_MOTORS] = {
+    ML_Motor(
+        {PORT_GRP_B, 20, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_C, 17, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+        TCC0, 1, ML_HPCB_LV_75P1, ML_ENC_CPR
+    ),
+    ML_Motor(
+        {PORT_GRP_B, 21, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_C, 16, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+        TCC0, 0, ML_HPCB_LV_75P1, ML_ENC_CPR
+    ),
+    ML_Motor(
+        {PORT_GRP_B, 17, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_C, 19, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+        TCC0, 3, ML_HPCB_LV_75P1, ML_ENC_CPR
+    ),
+    ML_Motor(
+        {PORT_GRP_B, 13, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_C, 18, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+        TCC0, 2, ML_HPCB_LV_75P1, ML_ENC_CPR
+    ),
+    ML_Motor(
+        {PORT_GRP_C, 23, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_C, 20, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+        TCC0, 4, ML_HPCB_LV_75P1, ML_ENC_CPR
+    ),
+    ML_Motor(
+        {PORT_GRP_C, 22, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_C, 21, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+        TCC0, 5, ML_HPCB_LV_75P1, ML_ENC_CPR
+    ),
+};
 
+
+// ML_Encoder_t enc3 = {
+//     {}, 
+//     {PORT_GRP_C, 11, PF_A, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
+//     {PORT_GRP_C, 10, PF_A, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
+//     0, 0, NULL};
+// ML_Encoder_t * const enc3_ptr = &enc3;
+
+// ML_Motor_t m3 = {
+//     {},
+//     {PORT_GRP_B, 13, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+//     {PORT_GRP_C, 18, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+//     enc3_ptr,
+//     {10.0, 0.0, 0.0, 500, 0, 0, 0, STEADY, 0},
+
+//     TCC0, 0, ML_HPCB_LV_75P1, ML_ENC_CPR, 0
+// };
 
 void dstack_a_init(void)
 {
     ML_SET_GCLK7_PCHCTRL(TCC0_GCLK_ID);
 
     TCC_DISABLE(TCC0);
-    TCC_SWRST(TCC0);
     TCC_sync(TCC0);
 
     TCC0->CTRLA.reg = 
@@ -283,16 +154,51 @@ void dstack_b_init(void)
      */
 }
 
+static void vPIDTimerCallback(xTimerHandle pxTimer) {
+    static bool started = false;
 
+    static bool dir = false;
+
+    int32_t id = (int32_t)pvTimerGetTimerID(pxTimer);
+
+    if (!started)
+    {
+        Event e = {SET_PWM_SIG, 5500};
+        Active_post(&(m[id].super), &e);
+
+        started = true;
+    }
+    else
+    {
+        Event e = {SET_DIR_SIG, OFF};
+        if (dir) { e.param = CW; }
+        else { e.param = CCW; }
+
+        Active_post(&(m[id].super), &e);
+
+        dir = !dir;
+    }
+
+    // int32_t id = (int32_t)pvTimerGetTimerID(pxTimer);
+
+    // Serial.print("Motor "); Serial.print(id); Serial.print(" position: "); Serial.print(m[id].ticks); Serial.print("\t"); Serial.println(m[id].pid.control_sig);
+
+    // Event e = {SET_TARGET_POS_SIG, 180};
+    // Active_post(&(m[id].super), &e);
+}
 
 void setup(void)
 {
-
-    //Serial.begin(9600);
-    //while(!Serial);
-
+    // Initialize system clock
     MCLK_init();
     GCLK_init();
+
+    // Initialize encoder interrupts
+    eic_init();
+    ML_Encoder_extint_init();
+    eic_enable();
+
+    vSetErrorLed(13, HIGH);
 
     dstack_a_init();
     TCC_ENABLE(TCC0);
@@ -302,82 +208,170 @@ void setup(void)
     TCC_ENABLE(TCC1);
     TCC_sync(TCC1);
 
-    eic_init();
-    encoder_extint_init();
-    eic_enable();
-
-    for(uint8_t i=0; i < N_MOTORS; i++)
+    // ========== Initialization Process ===========
+    for (int i = 3; i < 4; ++i)
     {
-        peripheral_port_init(&stack_pin_map[i].encoder_a);
-        peripheral_port_init(&stack_pin_map[i].encoder_b);
-        peripheral_port_init(&stack_pin_map[i].phase);
-        peripheral_port_init(&stack_pin_map[i].drive);
-
-        if(i % 2 == 0)
+        // Use FreeRTOS's software timers to periodically call PID
+        xTimerHandle pidTimer = xTimerCreate("PID Timer", pdMS_TO_TICKS(1000), pdTRUE, (void *)i, vPIDTimerCallback);
+        if (pidTimer == NULL);
+        else
         {
-            motor_set_speed(&stack_pin_map[i], 5500);
-        } else
-        {
-            motor_set_speed(&stack_pin_map[i], 5500);
+            if( xTimerStart(pidTimer, 0) != pdPASS ) while(1);
         }
 
-        // logical_set(&stack_pin_map[i].phase);
-        motor_set_direction(&stack_pin_map[i], OFF);
+        // ML_Encoder_register_stateChangeCallback(&(enc[i]), (ML_Encoder_stateChangeCallback)cb_func, NULL);
+        // ML_Encoder_start(&(enc[i]), 5, 20);
+
+        // ML_Motor_attachEncoder(&(m[i]), &(enc[i]));
+        // Set PID parameters
+        ML_Motor_setPIDParams(&(m[i]), 10.0, 2.0, 0.0, 50, 0);
+        ML_Motor_start(&(m[i]), 2, 20);
     }
-
-    // motor_set_direction(&stack_pin_map[0], CCW);
-    // motor_set_speed(&stack_pin_map[0], 5500);
+    // =============================================
 
 
-    //logical_set(&stack_pin_map[0].phase);
+    vTaskStartScheduler();
 
-    //logical_toggle(&stack_pin_map[1].phase);
-
-    //logical_set(&stack_pin_map[2].phase);
-    //logical_unset(&stack_pin_map[2].phase);
-
-    //ml_pin_settings tmp = stack_pin_map[0].phase;
-    //PORT->Group[tmp.group].OUTSET.reg |= (1 << PORT_OUTSET_OUTSET(tmp.pin));
+    while(1)
+    {
+        Serial.println("Scheduler Failed! \n");
+        Serial.flush();
+        delay(1000);
+    }
 }
-
-static boolean extint_12_intflag = false;
-static boolean extint_13_intflag = false;
 
 void loop(void)
 {
-    static byte position_idx = 0;
-
-    if(extint_12_intflag)
-    {
-        encoder_tick(&stack_pin_map[0]);
-        extint_12_intflag = false;
+    if (timer_expired) {
+        Serial.println("Hey!!!!");
+        timer_expired = false;
     }
+}
 
-    if(extint_13_intflag)
+void EIC_6_Handler(void)
+{
+    EIC_CLR_INTFLAG(6);
+
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    static Event const e = {TICK_SIG};
+
+    Active_postFromISR(&(enc[2].super), &e, &xHigherPriorityTaskWoken);
+
+    if (xHigherPriorityTaskWoken)
     {
-        encoder_tick(&stack_pin_map[0]);
-        extint_13_intflag = false;
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
+}
 
-    motor_pid_control_loop(&stack_pin_map[0], positions[position_idx]);
+void EIC_9_Handler(void)
+{
+    EIC_CLR_INTFLAG(9);
 
-    bool isSteady = pid_steady_state(&stack_pin_map[0].pid_ctrl);
-    
-    if (isSteady)
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    static Event const e = {TICK_SIG};
+
+    Active_postFromISR(&(enc[2].super), &e, &xHigherPriorityTaskWoken);
+
+    if (xHigherPriorityTaskWoken)
     {
-        position_idx = (position_idx + 1) % NUM_POSITIONS;
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
-    // Serial.println(stack_pin_map[0].ticks);
+}
+
+void EIC_10_Handler(void)
+{
+    EIC_CLR_INTFLAG(10);
+
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    static Event const e = {TICK_SIG};
+
+    Active_postFromISR(&(enc[2].super), &e, &xHigherPriorityTaskWoken);
+
+    if (xHigherPriorityTaskWoken)
+    {
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+}
+
+void EIC_11_Handler(void)
+{
+    EIC_CLR_INTFLAG(11);
+
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    static Event const e = {TICK_SIG};
+
+    Active_postFromISR(&(enc[2].super), &e, &xHigherPriorityTaskWoken);
+
+    if (xHigherPriorityTaskWoken)
+    {
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
 }
 
 void EIC_12_Handler(void)
 {
     EIC_CLR_INTFLAG(12);
-    extint_12_intflag = true;
+
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    static Event const e = {TICK_SIG};
+
+    Active_postFromISR(&(enc[1].super), &e, &xHigherPriorityTaskWoken);
+
+    if (xHigherPriorityTaskWoken)
+    {
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
 }
 
 void EIC_13_Handler(void)
 {
     EIC_CLR_INTFLAG(13);
-    extint_13_intflag = true;
+
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    static Event const e = {TICK_SIG};
+
+    Active_postFromISR(&(enc[1].super), &e, &xHigherPriorityTaskWoken);
+
+    if (xHigherPriorityTaskWoken)
+    {
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+}
+
+void EIC_14_Handler(void)
+{
+    EIC_CLR_INTFLAG(14);
+
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    static Event const e = {TICK_SIG};
+
+    Active_postFromISR(&(enc[0].super), &e, &xHigherPriorityTaskWoken);
+
+    if (xHigherPriorityTaskWoken)
+    {
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+}
+
+void EIC_15_Handler(void)
+{
+    EIC_CLR_INTFLAG(15);
+
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    static Event const e = {TICK_SIG};
+
+    Active_postFromISR(&(enc[0].super), &e, &xHigherPriorityTaskWoken);
+
+    if (xHigherPriorityTaskWoken)
+    {
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
 }
