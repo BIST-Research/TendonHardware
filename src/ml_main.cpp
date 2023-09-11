@@ -11,54 +11,52 @@
 
 #define NUM_MOTORS  6
 
-static bool timer_expired = false;
-
 ML_Encoder_t enc[NUM_MOTORS] = {
     ML_Encoder(
-        {PORT_GRP_C, 15, PF_A, PP_ODD, INPUT_PULL_UP, DRIVE_OFF},
-        {PORT_GRP_C, 14, PF_A, PP_EVEN, INPUT_PULL_UP, DRIVE_OFF}
+        {PORT_GRP_C, 15, PMUX_DISABLE, PF_A, PP_ODD, INPUT_PULL_UP, DRIVE_OFF},
+        {PORT_GRP_C, 14, PMUX_DISABLE, PF_A, PP_EVEN, INPUT_PULL_UP, DRIVE_OFF}
         ),
     ML_Encoder(
-        {PORT_GRP_C, 12, PF_A, PP_EVEN, INPUT_PULL_UP, DRIVE_OFF},
-        {PORT_GRP_C, 13, PF_A, PP_ODD, INPUT_PULL_UP, DRIVE_OFF}
+        {PORT_GRP_C, 12, PMUX_DISABLE, PF_A, PP_EVEN, INPUT_PULL_UP, DRIVE_OFF},
+        {PORT_GRP_C, 13, PMUX_DISABLE, PF_A, PP_ODD, INPUT_PULL_UP, DRIVE_OFF}
         ),
     ML_Encoder(
-        {PORT_GRP_C, 10, PF_A, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
-        {PORT_GRP_C, 11, PF_A, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF}
+        {PORT_GRP_C, 10, PMUX_DISABLE, PF_A, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF},
+        {PORT_GRP_C, 11, PMUX_DISABLE, PF_A, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF}
     ) 
 };
 
 ML_Motor_t m[NUM_MOTORS] = {
     ML_Motor(
-        {PORT_GRP_B, 20, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-        {PORT_GRP_C, 17, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_B, 20, PMUX_DISABLE, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_C, 17, PMUX_ENABLE, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
         TCC0, 1, ML_HPCB_LV_75P1, ML_ENC_CPR
     ),
     ML_Motor(
-        {PORT_GRP_B, 21, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        {PORT_GRP_C, 16, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_B, 21, PMUX_DISABLE, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_C, 16, PMUX_ENABLE, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
         TCC0, 0, ML_HPCB_LV_75P1, ML_ENC_CPR
     ),
     ML_Motor(
-        {PORT_GRP_B, 17, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        {PORT_GRP_C, 19, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_B, 17, PMUX_DISABLE, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_C, 19, PMUX_ENABLE, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
         TCC0, 3, ML_HPCB_LV_75P1, ML_ENC_CPR
     ),
-    ML_Motor(
-        {PORT_GRP_B, 13, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        {PORT_GRP_C, 18, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-        TCC0, 2, ML_HPCB_LV_75P1, ML_ENC_CPR
-    ),
-    ML_Motor(
-        {PORT_GRP_C, 23, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        {PORT_GRP_C, 20, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-        TCC0, 4, ML_HPCB_LV_75P1, ML_ENC_CPR
-    ),
-    ML_Motor(
-        {PORT_GRP_C, 22, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-        {PORT_GRP_C, 21, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        TCC0, 5, ML_HPCB_LV_75P1, ML_ENC_CPR
-    ),
+    // ML_Motor(
+    //     {PORT_GRP_B, 13, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+    //     {PORT_GRP_C, 18, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+    //     TCC0, 2, ML_HPCB_LV_75P1, ML_ENC_CPR
+    // ),
+    // ML_Motor(
+    //     {PORT_GRP_C, 23, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+    //     {PORT_GRP_C, 20, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+    //     TCC0, 4, ML_HPCB_LV_75P1, ML_ENC_CPR
+    // ),
+    // ML_Motor(
+    //     {PORT_GRP_C, 22, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+    //     {PORT_GRP_C, 21, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
+    //     TCC0, 5, ML_HPCB_LV_75P1, ML_ENC_CPR
+    // ),
 };
 
 
@@ -155,36 +153,36 @@ void dstack_b_init(void)
 }
 
 static void vPIDTimerCallback(xTimerHandle pxTimer) {
-    static bool started = false;
+    // static bool started = false;
 
-    static bool dir = false;
-
-    int32_t id = (int32_t)pvTimerGetTimerID(pxTimer);
-
-    if (!started)
-    {
-        Event e = {SET_PWM_SIG, 5500};
-        Active_post(&(m[id].super), &e);
-
-        started = true;
-    }
-    else
-    {
-        Event e = {SET_DIR_SIG, OFF};
-        if (dir) { e.param = CW; }
-        else { e.param = CCW; }
-
-        Active_post(&(m[id].super), &e);
-
-        dir = !dir;
-    }
+    // static bool dir = false;
 
     // int32_t id = (int32_t)pvTimerGetTimerID(pxTimer);
 
-    // Serial.print("Motor "); Serial.print(id); Serial.print(" position: "); Serial.print(m[id].ticks); Serial.print("\t"); Serial.println(m[id].pid.control_sig);
+    // if (!started)
+    // {
+    //     Event e = {SET_PWM_SIG, 5500};
+    //     Active_post(&(m[id].super), &e);
 
-    // Event e = {SET_TARGET_POS_SIG, 180};
-    // Active_post(&(m[id].super), &e);
+    //     started = true;
+    // }
+    // else
+    // {
+    //     Event e = {SET_DIR_SIG, OFF};
+    //     if (dir) { e.param = CW; }
+    //     else { e.param = CCW; }
+
+    //     Active_post(&(m[id].super), &e);
+
+    //     dir = !dir;
+    // }
+
+    int32_t id = (int32_t)pvTimerGetTimerID(pxTimer);
+
+    Serial.print("Motor "); Serial.print(id); Serial.print(" position: "); Serial.print(m[id].ticks); Serial.print("\t"); Serial.println(m[id].pid.control_sig);
+
+    Event e = {SET_TARGET_POS_SIG, 180};
+    Active_post(&(m[id].super), &e);
 }
 
 void setup(void)
@@ -222,7 +220,7 @@ void setup(void)
         // ML_Encoder_register_stateChangeCallback(&(enc[i]), (ML_Encoder_stateChangeCallback)cb_func, NULL);
         // ML_Encoder_start(&(enc[i]), 5, 20);
 
-        // ML_Motor_attachEncoder(&(m[i]), &(enc[i]));
+        ML_Motor_attachEncoder(&(m[i]), &(enc[i]));
         // Set PID parameters
         ML_Motor_setPIDParams(&(m[i]), 10.0, 2.0, 0.0, 50, 0);
         ML_Motor_start(&(m[i]), 2, 20);
@@ -242,10 +240,7 @@ void setup(void)
 
 void loop(void)
 {
-    if (timer_expired) {
-        Serial.println("Hey!!!!");
-        timer_expired = false;
-    }
+
 }
 
 void EIC_6_Handler(void)
