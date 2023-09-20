@@ -13,8 +13,8 @@
 
 ML_Encoder_t enc[NUM_MOTORS] = {
     ML_Encoder(
-        {PORT_GRP_C, 15, PMUX_DISABLE, PF_A, PP_ODD, INPUT_PULL_UP, DRIVE_OFF},
-        {PORT_GRP_C, 14, PMUX_DISABLE, PF_A, PP_EVEN, INPUT_PULL_UP, DRIVE_OFF}
+        {PORT_GRP_C, 13, PMUX_DISABLE, PF_A, PP_ODD, INPUT_PULL_DOWN, DRIVE_OFF},
+        {PORT_GRP_C, 12, PMUX_DISABLE, PF_A, PP_EVEN, INPUT_PULL_DOWN, DRIVE_OFF}
         ),
     ML_Encoder(
         {PORT_GRP_C, 12, PMUX_DISABLE, PF_A, PP_EVEN, INPUT_PULL_UP, DRIVE_OFF},
@@ -28,9 +28,9 @@ ML_Encoder_t enc[NUM_MOTORS] = {
 
 ML_Motor_t m[NUM_MOTORS] = {
     ML_Motor(
-        {PORT_GRP_B, 20, PMUX_DISABLE, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
-        {PORT_GRP_C, 17, PMUX_ENABLE, PF_F, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
-        TCC0, 1, ML_HPCB_LV_75P1, ML_ENC_CPR
+        {PORT_GRP_B, 16, PMUX_DISABLE, PF_B, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+        {PORT_GRP_C, 20, PMUX_ENABLE, PF_F, PP_EVEN, OUTPUT_PULL_DOWN, DRIVE_ON},
+        TCC0, 4, ML_HPCB_LV_75P1, ML_ENC_CPR
     ),
     ML_Motor(
         {PORT_GRP_B, 21, PMUX_DISABLE, PF_B, PP_ODD, OUTPUT_PULL_DOWN, DRIVE_ON},
@@ -207,10 +207,10 @@ void setup(void)
     TCC_sync(TCC1);
 
     // ========== Initialization Process ===========
-    for (int i = 3; i < 4; ++i)
+    for (int i = 0; i < 1; ++i)
     {
         // Use FreeRTOS's software timers to periodically call PID
-        xTimerHandle pidTimer = xTimerCreate("PID Timer", pdMS_TO_TICKS(1000), pdTRUE, (void *)i, vPIDTimerCallback);
+        xTimerHandle pidTimer = xTimerCreate("PID Timer", pdMS_TO_TICKS(50), pdTRUE, (void *)i, vPIDTimerCallback);
         if (pidTimer == NULL);
         else
         {
@@ -218,7 +218,7 @@ void setup(void)
         }
 
         // ML_Encoder_register_stateChangeCallback(&(enc[i]), (ML_Encoder_stateChangeCallback)cb_func, NULL);
-        // ML_Encoder_start(&(enc[i]), 5, 20);
+        ML_Encoder_start(&(enc[i]), 5, 20);
 
         ML_Motor_attachEncoder(&(m[i]), &(enc[i]));
         // Set PID parameters
@@ -315,7 +315,7 @@ void EIC_12_Handler(void)
 
     static Event const e = {TICK_SIG};
 
-    Active_postFromISR(&(enc[1].super), &e, &xHigherPriorityTaskWoken);
+    Active_postFromISR(&(enc[0].super), &e, &xHigherPriorityTaskWoken);
 
     if (xHigherPriorityTaskWoken)
     {
@@ -331,7 +331,7 @@ void EIC_13_Handler(void)
 
     static Event const e = {TICK_SIG};
 
-    Active_postFromISR(&(enc[1].super), &e, &xHigherPriorityTaskWoken);
+    Active_postFromISR(&(enc[0].super), &e, &xHigherPriorityTaskWoken);
 
     if (xHigherPriorityTaskWoken)
     {

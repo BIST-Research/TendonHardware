@@ -16,6 +16,7 @@ void peripheral_port_init(const ml_pin_settings *set)
 
     const ml_port_group group = set->group;
     const ml_pin pin = set->pin;
+    const ml_port_pmux pmux_en = set->pmux_en;
     const ml_port_parity parity = set->par;
     const ml_port_config config = set->conf;
     const ml_port_drive_strength drive = set->drv;
@@ -24,6 +25,7 @@ void peripheral_port_init(const ml_pin_settings *set)
 
     uint8_t pmux_mask = parity ? PORT_PMUX_PMUXE((uint8_t)func) : PORT_PMUX_PMUXO((uint8_t)func);
 
+    // PORT->Group[group].PINCFG[pin].reg |= (pmux_en ? PORT_PINCFG_PMUXEN : 0x0);
     PORT->Group[group].PINCFG[pin].reg |= PORT_PINCFG_PMUXEN;
 
     PORT->Group[group].PINCFG[pin].reg |= (CONFIG_PULLEN(config) ? PORT_PINCFG_PULLEN : 0x0);

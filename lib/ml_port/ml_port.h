@@ -54,10 +54,17 @@ typedef enum
     PORT_GRP_D
 } ml_port_group;
 
+typedef enum
+{
+    PMUX_DISABLE = 0x00,
+    PMUX_ENABLE = 0x01
+} ml_port_pmux;
+
 typedef struct
 {
     ml_port_group group;
     ml_pin pin;
+    ml_port_pmux pmux_en;
     ml_port_function pf;
     ml_port_parity par;
     ml_port_config conf;
