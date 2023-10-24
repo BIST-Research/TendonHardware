@@ -30,11 +30,11 @@ typedef struct
 
 } ml_motor;
 
-typedef enum
-{
-    CW, CCW, OFF
-} ml_motor_dir;
+// typedef enum
+// {
+//     CW, CCW, OFF
+// } ml_motor_dir;
 
 
-void motor_set_speed(ml_motor *motor, uint16_t speed);
-void motor_set_direction(ml_motor *motor, ml_motor_dir dir);
+// void motor_set_speed(ml_motor *motor, uint16_t speed);
+// void motor_set_direction(ml_motor *motor, ml_motor_dir dir);

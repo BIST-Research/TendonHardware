@@ -65,6 +65,7 @@ typedef struct
 
 } ml_pin_settings;
 
+void port_pmux_disable(const ml_pin_settings *set);
 
 void peripheral_port_init
 (

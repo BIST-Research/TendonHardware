@@ -40,6 +40,11 @@ void peripheral_port_init(const ml_pin_settings *set)
 
 }
 
+void port_pmux_disable(const ml_pin_settings *set)
+{
+    PORT->Group[set->group].PINCFG[set->pin].bit.PMUXEN = 0x00;
+}
+
 boolean logical_read(const ml_pin_settings *set)
 {
     return ((PORT->Group[set->group].IN.reg & (1 << PORT_IN_IN(set->pin))) >> PORT_IN_IN(set->pin));

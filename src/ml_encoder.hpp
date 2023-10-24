@@ -25,25 +25,6 @@
  * M5:
  *      enca: D30 --> PA23 --> EXTINT[7]
  *      encb: D51 --> PD08 --> EXTINT[3]
- * M6:
- *      enca: D52 --> PD09 --> EXTINT[4] (Conflict with PC04)
- *      encb: D53 --> PD10 --> EXTINT[5] (Conflict with PC05)
- * M7:
- *      enca: D38 --> PB15 --> EXTINT[15] (Conflict with PC15)
- *      encb: D39 --> PB14 --> EXTINT[14] (Conflict with PC14)
- * M8:
- *      enca: D8 --> PB18 --> EXTINT[2]
- *      encb: D31 --> PA22 --> EXTINT[6]
- * M9:
- *      enca: D12 --> PB00 --> EXTINT[0]
- *      encb: D29 --> PB19 --> EXTINT[3] (Conflict w/ PD08)
- * M10:
- *      enca: D26 --> PA12 --> EXTINT[12] (Conflict w/ C12)
- *      encb: D27 --> PA13 --> EXTINT[13] (Conflict w/ C13)
- * M11:
- *      enca: D22 --> PD12 --> EXTINT[7] (Conflict w/ A23)
- *      encb: D13 --> PB01 --> EXTINT[1]
- * 
  */
 
 void encoder_extint_init(void);

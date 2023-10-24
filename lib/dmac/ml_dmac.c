@@ -5,16 +5,22 @@
 
 #include <ml_dmac.h>
 
-void DMAC_channel_intenset(const uint8_t channel, const IRQn_Type IRQn, const uint8_t intmsk, const uint32_t priority_level){
+/**
+ * set interrupt for DMAC
+*/
+void DMAC_channel_intenset(const ml_dmac_chnum_t channel, const IRQn_Type IRQn, const uint8_t intmsk, const uint32_t priority_level)
+{
 
     DMAC->Channel[channel].CHINTENSET.reg |= intmsk;
     
     NVIC_SetPriority(IRQn, priority_level);
 
     NVIC_EnableIRQ(IRQn);
+
 }
 
-void DMAC_init(DmacDescriptor *base_descriptor, volatile DmacDescriptor *writeback_descriptor){
+void DMAC_init(DmacDescriptor *base_descriptor, volatile DmacDescriptor *writeback_descriptor)
+{
 
   // disable and software reset 
   ML_DMAC_DISABLE();
@@ -39,7 +45,8 @@ void DMAC_init(DmacDescriptor *base_descriptor, volatile DmacDescriptor *writeba
  * and another for moving data from memeory to a TCC instance
  * 
  */
-void DMAC_channel_init(const uint8_t channel, const uint32_t settings, const uint8_t priority_level){
+void DMAC_channel_init(const ml_dmac_chnum_t channel, const uint32_t settings, const ml_dmac_chprilvl_t priority_level)
+{
 
   ML_DMAC_CHANNEL_DISABLE(channel);
   ML_DMAC_CHANNEL_SWRST(channel);
@@ -66,7 +73,8 @@ void DMAC_descriptor_init(const uint16_t btsettings,
                                 const uint32_t srcaddr, 
                                 const uint32_t dstaddr, 
                                 const uint32_t descaddr,
-                                DmacDescriptor *cpy) {
+                                DmacDescriptor *cpy) 
+{
 
   DmacDescriptor descriptor;
 
@@ -90,4 +98,22 @@ void DMAC_descriptor_init(const uint16_t btsettings,
   // copy setup descriptor ptr into base descriptor allocation
   memcpy((void *)cpy, &descriptor, sizeof(DmacDescriptor));
 
+}
+
+void DMAC_descriptor_cpyto
+(
+  DmacDescriptor *descriptor_target,
+  DmacDescriptor *descriptor_src
+)
+{
+  memcpy((void *)descriptor_src, descriptor_target, sizeof(DmacDescriptor));
+}
+
+uint32_t DMAC_extract_btsize(const uint16_t descriptor_settings)
+{
+    uint32_t rsize = descriptor_settings & DMAC_BTCTRL_BEATSIZE_Msk;
+    return (rsize > 0) ? (rsize > 1) ? 
+                      sizeof(uint32_t) : 
+                      sizeof(uint16_t) : 
+                      sizeof(uint8_t);
 }

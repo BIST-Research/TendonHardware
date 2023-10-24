@@ -18,6 +18,8 @@ extern "C"
 void eic_init(void);
 void eic_enable(void);
 
+void hardware_int_init(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -20,6 +20,7 @@ void MCLK_init(void)
   MCLK->APBBMASK.reg |= MCLK_APBBMASK_TC2;
   MCLK->APBBMASK.reg |= MCLK_APBBMASK_TC3;
   MCLK->APBAMASK.reg |= MCLK_APBAMASK_EIC;
+  //MCLK->APBDMASK.reg |= MCLK_APBDMASK_SERCOM4;
 
 }
 
@@ -87,6 +88,16 @@ void GCLK_init(void)
   GCLK->PCHCTRL[DAC_GCLK_ID].reg = GCLK_PCHCTRL_CHEN |        // Enable the TCC0 perhipheral channel
                                    GCLK_PCHCTRL_GEN_GCLK4;  
 
+}
+
+void OSCULP32K_init(void)
+{
+  OSC32KCTRL->OSCULP32K.reg |= 
+  (
+    OSC32KCTRL_OSCULP32K_EN1K |
+    OSC32KCTRL_OSCULP32K_EN32K |
+    OSC32KCTRL_OSCULP32K_WRTLOCK
+  );
 }
 
 
