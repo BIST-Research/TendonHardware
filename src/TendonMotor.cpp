@@ -88,6 +88,12 @@ void TendonController::encoder_ISR()
     m_lastTicks = current_encoded;
 }
 
+void TendonController::Reset_Encoder_Zero()
+{
+    m_currentTicks = 0;
+    m_lastTicks = 0;
+}
+
 void TendonController::Set_EncA_Flag()
 {
     m_encA_ticks++;
@@ -263,8 +269,9 @@ float TendonController::Get_Angle()
 void TendonController::Set_Angle(float destAngle)
 {
     // grab current time
-    unsigned long curTime = micros();
-    unsigned long deltaTime = curTime - m_prevPIDTime;
+    float curTime = micros();
+    float deltaTime = curTime - m_prevPIDTime;
+    deltaTime /= 1.0e6;
 
     // get number of encoders ticks needed to get to angle
     int32_t target_ticks = (destAngle * m_cycles_per_rev * m_gear_ratio) / 360.0;
@@ -272,8 +279,11 @@ void TendonController::Set_Angle(float destAngle)
     // calculate the error
     int32_t error = target_ticks - m_currentTicks;
 
-    if (abs(error) < 2){
+    if (abs(error) < 2)
+    {
         Set_Direction(OFF);
+        m_prevPIDTime = curTime;
+        m_error_integral = 0;
         return;
     }
 
@@ -281,10 +291,10 @@ void TendonController::Set_Angle(float destAngle)
     float derivative = (error - m_error_prev) / deltaTime;
 
     // integral
-    m_error_integral += error * deltaTime;
+    m_error_integral = m_error_integral + (error * deltaTime);
 
     // calc control signal
-    float sig = m_kp * error + m_kd * derivative + m_ki * m_error_integral;
+    float sig = (m_kp * error) + (m_kd * derivative) + (m_ki * m_error_integral);
 
     // set new pwm signal
     m_cur_pwm = (uint16_t)fabs(sig);
@@ -296,11 +306,11 @@ void TendonController::Set_Angle(float destAngle)
         m_direction = CCW;
     }
 
-    if (!m_calibrated)
+    if (!m_calibrated)  // not calibrated
     {
-        m_cur_pwm = mapf(m_cur_pwm, 0, 6000, 2500, 6000);
+        m_cur_pwm = mapf(m_cur_pwm, 0, 6000, 1000, 6000);
     }
-    else
+    else    // each motor is calibrated
     {
         uint16_t min = sig < 0 ? m_min_CCW_PWM : m_min_CW_PWM;
         m_cur_pwm = mapf(m_cur_pwm, 0, 6000, min, 6000);
